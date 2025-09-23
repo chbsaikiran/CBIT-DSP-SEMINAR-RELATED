@@ -17,11 +17,12 @@
 #define Word32 int
 #define Word16 short
 
-#define COEFF_TYPE Word32
-#define INPT_TYPE Word32
+#define COEFF_TYPE Word16
+#define INPT_TYPE Word16
 #define INTER_TYPE Word64
-#define COEFF_PRECISION_BITS 31
-#define INPT_PRECISION_BITS 31
+#define COEFF_PRECISION_BITS 15
+#define INPT_PRECISION_BITS 15
+#define INTER_PRECISION_BITS 15
 
 INTER_TYPE s64_mul_s32_s32(COEFF_TYPE x, INPT_TYPE y)
 {
@@ -95,8 +96,8 @@ void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out, INPT_T
         }
         //acc = acc << (64 - 32 - 3);
         //out[n] = (INPT_TYPE)(((acc >> 46) + 1) >> 1);
-        //out[n] = (INPT_TYPE)(((acc >> 14) + 1) >> 1);
-        out[n] = (INPT_TYPE)(acc >> 31);
+        //out[n] = (INPT_TYPE)(((acc >> (INTER_PRECISION_BITS- 1)) + 1) >> 1);
+        out[n] = (INPT_TYPE)(acc >> INTER_PRECISION_BITS);
     }
     // shift input samples back in time for next time
     memmove( &delay_line_fxd[0], &delay_line_fxd[frame_size],
@@ -157,7 +158,7 @@ int main(void)
 #ifdef USE_FIXED_PT_CODE
     for (i = 0; i < 13; i++)
     {
-        coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 5));
+        coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
     }
 
     for (i = 0; i < (12+30); i++)
