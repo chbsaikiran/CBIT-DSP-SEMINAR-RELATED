@@ -1,0 +1,40 @@
+venv
+.env
+*.json
+*.log
+*.csv
+*.xlsx
+*.xls
+*.doc
+*.docx
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+
+# Visual Studio user-specific files
+*.user
+*.suo
+
+# Visual Studio cache and local settings
+.vs/
+
+# Build results
+Debug/
+Release/
+x64/
+x86/
+[Oo]bj/
+[Bb]in/
+
+# Other intermediate files
+*.log
+*.tlog
+*.pdb
+*.idb
+*.opendb
+*.VC.db
+*.ipch
+
