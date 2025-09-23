@@ -225,22 +225,29 @@ if __name__ == "__main__":
         stop_atten_db=stop_atten,
         plot=True  # Show filter response
     )
+
+    np.random.seed(42)
+    # Generate random noise in range [-8, 8]
+    noise = np.random.uniform(-3, 3, size=filter_coeffs.shape)
+    filter_coeffs += noise
+    np.random.seed(None)
+
     print(f"Filter order: {len(filter_coeffs) - 1}")
     print(f"Number of coefficients: {len(filter_coeffs)}")
-    print(f"filter coefficients data type: max {np.max(filter_coeffs)}, min {np.min(filter_coeffs)},sum {np.sum(np.abs(filter_coeffs))}")
+    print(f"filter coefficients data type: max {np.max(filter_coeffs)}, min {np.min(filter_coeffs)},sum {np.sum(np.abs(filter_coeffs))}, noise {np.max(noise)}, noise sum {np.sum(np.abs(noise))}")
 
-    #filter_coeffs_float32 = filter_coeffs.astype(np.float32)
-    #with open('filter_coeffs.bin', 'wb') as f:
-    #    filter_coeffs_float32.tofile(f)
+    filter_coeffs_float32 = filter_coeffs.astype(np.float32)
+    with open('filter_coeffs.bin', 'wb') as f:
+        filter_coeffs_float32.tofile(f)
     
     # Generate test signal (3 seconds duration)
     duration = 3
     test_signal = generate_test_signal(fs, duration)
     
     # Convert to float32 and save to binary file
-    #test_signal_float32 = test_signal.astype(np.float32)
-    #with open('test_signal.bin', 'wb') as f:
-    #    test_signal_float32.tofile(f)
+    test_signal_float32 = test_signal.astype(np.float32)
+    with open('test_signal.bin', 'wb') as f:
+        test_signal_float32.tofile(f)
     print(f"Test signal data type: max {np.max(test_signal)}, min {np.min(test_signal)}")
     
     print(f"\nTest signal info:")

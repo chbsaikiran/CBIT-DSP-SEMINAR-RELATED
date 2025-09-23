@@ -17,12 +17,11 @@
 #define Word32 int
 #define Word16 short
 
-#define COEFF_TYPE Word32
+#define COEFF_TYPE Word16
 #define INPT_TYPE Word16
 #define INTER_TYPE Word64
-#define COEFF_PRECISION_BITS 31
+#define COEFF_PRECISION_BITS 15
 #define INPT_PRECISION_BITS 15
-
 
 INTER_TYPE s64_mul_s32_s32(COEFF_TYPE x, INPT_TYPE y)
 {
@@ -94,7 +93,9 @@ void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out, INPT_T
         {
             acc = s64_mla_s32_s32(acc, (*coeffp++), (*inputp--));
         }
-        out[n] = (INPT_TYPE)(acc >> 31);
+        acc = acc << (64 - 32 - 3);
+        out[n] = (INPT_TYPE)(((acc >> 46) + 1) >> 1);
+        //out[n] = (INPT_TYPE)(((acc >> 14) + 1) >> 1);
     }
     // shift input samples back in time for next time
     memmove( &delay_line_fxd[0], &delay_line_fxd[frame_size],
@@ -147,15 +148,15 @@ int main(void)
     double elapsed = 0;
 #endif
 
-    fcoeffs = fopen("filter_coeffs.bin","rb");
-    finput = fopen("test_signal.bin", "rb");
+    fcoeffs = fopen("..\\..\\PythonProjects\\FIR_FILTER\\filter_coeffs.bin","rb");
+    finput = fopen("..\\..\\PythonProjects\\FIR_FILTER\\test_signal.bin", "rb");
     fout = fopen("out_msvc_wo_circ_buffer.bin","wb");
 
     fread(coeffs,13,sizeof(float),fcoeffs);
 #ifdef USE_FIXED_PT_CODE
     for (i = 0; i < 13; i++)
     {
-        coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 1));
+        coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 2));
     }
 
     for (i = 0; i < (12+30); i++)
@@ -199,14 +200,14 @@ int main(void)
         {
             for (i = 0; i < 30; i++)
             {
-                out[i] = fixed_to_float_conv(out_fxd_pt[i], (INPT_PRECISION_BITS - 4));
+                out[i] = fixed_to_float_conv(out_fxd_pt[i], (INPT_PRECISION_BITS - 8));
             }
         }
         else
         {
             for (i = 0; i < 30; i++)
             {
-                out[i] = fixed_to_float_conv_16bit(out_fxd_pt[i], (INPT_PRECISION_BITS - 4));
+                out[i] = fixed_to_float_conv_16bit(out_fxd_pt[i], (INPT_PRECISION_BITS - 8));
             }
         }
 #else
