@@ -1,5 +1,6 @@
 import numpy as np
 import argparse
+import matplotlib.pyplot as plt
 
 def read_float_file(filename):
     """
@@ -33,14 +34,68 @@ def calculate_rmse(data1, data2):
     Returns:
     --------
     rmse : float
-        Root Mean Square Error
+        Root Mean Square Error in dB
+    error : ndarray
+        Error signal (difference between data1 and data2)
     """
     if len(data1) != len(data2):
         raise ValueError(f"Arrays have different lengths: {len(data1)} vs {len(data2)}")
     
-    mse = np.mean((data1 - data2) ** 2)
+    error = data1 - data2
+    mse = np.mean(error ** 2)
     rmse = np.sqrt(mse)
-    return (10*np.log10(rmse))
+    return (10*np.log10(rmse)), error
+
+def plot_error_analysis(data1, data2, error, fs=1000):
+    """
+    Plot the original signals and their error.
+    
+    Parameters:
+    -----------
+    data1, data2 : ndarray
+        Input arrays being compared
+    error : ndarray
+        Error signal (difference between data1 and data2)
+    fs : float
+        Sampling frequency in Hz (default: 1000)
+    """
+    # Create time vector
+    t = np.arange(len(data1)) / fs
+    
+    # Create figure with subplots
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 10))
+    
+    # Plot first signal
+    ax1.plot(t, data1, label='Signal 1')
+    ax1.set_title('Signal 1 (Python Implementation)')
+    ax1.set_xlabel('Time (s)')
+    ax1.set_ylabel('Amplitude')
+    ax1.grid(True)
+    
+    # Plot second signal
+    ax2.plot(t, data2, label='Signal 2', color='orange')
+    ax2.set_title('Signal 2 (C Implementation)')
+    ax2.set_xlabel('Time (s)')
+    ax2.set_ylabel('Amplitude')
+    ax2.grid(True)
+    
+    # Plot error signal
+    ax3.plot(t, error, label='Error', color='red')
+    ax3.set_title('Error Signal (Signal 1 - Signal 2)')
+    ax3.set_xlabel('Time (s)')
+    ax3.set_ylabel('Amplitude')
+    ax3.grid(True)
+    
+    # Add error statistics as text
+    stats_text = f'Error Statistics:\n'
+    stats_text += f'Mean: {np.mean(error):.6f}\n'
+    stats_text += f'Std: {np.std(error):.6f}\n'
+    stats_text += f'Max: {np.max(np.abs(error)):.6f}'
+    ax3.text(0.02, 0.98, stats_text, transform=ax3.transAxes, 
+             verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+    
+    plt.tight_layout()
+    plt.show()
 
 def main():
     # Set up command line argument parser
@@ -48,6 +103,8 @@ def main():
     parser.add_argument('file1', help='Path to first file')
     parser.add_argument('file2', help='Path to second file')
     parser.add_argument('--verbose', '-v', action='store_true', help='Print detailed statistics')
+    parser.add_argument('--fs', type=float, default=1000, help='Sampling frequency in Hz (default: 1000)')
+    parser.add_argument('--no-plot', action='store_true', help='Disable plotting')
     
     args = parser.parse_args()
     
@@ -58,20 +115,24 @@ def main():
         print(f"Reading file: {args.file2}")
         data2 = read_float_file(args.file2)
         
-        # Calculate RMSE
-        rmse = calculate_rmse(data1, data2)
+        # Calculate RMSE and get error signal
+        rmse, error = calculate_rmse(data1, data2)
         
         # Print results
         print("\nResults:")
-        print(f"RMSE: {rmse:.6f}")
+        print(f"RMSE: {rmse:.6f} dB")
         
         if args.verbose:
             print("\nDetailed Statistics:")
             print(f"Number of samples: {len(data1)}")
             print(f"File 1 - Mean: {np.mean(data1):.6f}, Std: {np.std(data1):.6f}")
             print(f"File 2 - Mean: {np.mean(data2):.6f}, Std: {np.std(data2):.6f}")
-            print(f"Maximum absolute difference: {np.max(np.abs(data1 - data2)):.6f}")
-            
+            print(f"Maximum absolute difference: {np.max(np.abs(error)):.6f}")
+            print(f"Error signal - Mean: {np.mean(error):.6f}, Std: {np.std(error):.6f}")
+        
+        # Plot signals and error if not disabled
+        if not args.no_plot:
+            plot_error_analysis(data1, data2, error, args.fs)
     except Exception as e:
         print(f"Error: {str(e)}")
         return 1
