@@ -96,8 +96,7 @@ void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out, INPT_T
         }
         //acc = acc << (64 - 32 - 3);
         //out[n] = (INPT_TYPE)(((acc >> 46) + 1) >> 1);
-        //out[n] = (INPT_TYPE)(((acc >> (INTER_PRECISION_BITS- 1)) + 1) >> 1);
-        out[n] = (INPT_TYPE)(acc >> INTER_PRECISION_BITS);
+        out[n] = (INPT_TYPE)(((acc >> (INTER_PRECISION_BITS- 1)) + 1) >> 1);
     }
     // shift input samples back in time for next time
     memmove( &delay_line_fxd[0], &delay_line_fxd[frame_size],
@@ -156,9 +155,19 @@ int main(void)
 
     fread(coeffs,13,sizeof(float),fcoeffs);
 #ifdef USE_FIXED_PT_CODE
-    for (i = 0; i < 13; i++)
+    if (sizeof(COEFF_TYPE) == 4)
     {
-        coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
+        for (i = 0; i < 13; i++)
+        {
+            coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
+        }
+    }
+    else
+    {
+        for (i = 0; i < 13; i++)
+        {
+            coeffs_fxd_pt[i] = float_to_fixed_conv_16bit(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
+        }
     }
 
     for (i = 0; i < (12+30); i++)
