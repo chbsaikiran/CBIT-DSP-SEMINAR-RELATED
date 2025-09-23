@@ -17,6 +17,7 @@ __pycache__
 # Visual Studio user-specific files
 *.user
 *.suo
+*.bin
 
 # Visual Studio cache and local settings
 .vs/
