@@ -22,31 +22,41 @@ def read_float_file(filename):
     except Exception as e:
         raise IOError(f"Error reading file {filename}: {str(e)}")
 
+import numpy as np
+
 def calculate_rmse(data1, data2):
     """
     Calculate Root Mean Square Error between two arrays.
-    
+    If arrays have different lengths, truncate to the shorter one.
+
     Parameters:
     -----------
     data1, data2 : ndarray
         Input arrays to compare
-        
+
     Returns:
     --------
-    rmse : float
+    rmse_db : float
         Root Mean Square Error in dB
     error : ndarray
-        Error signal (difference between data1 and data2)
+        Error signal (difference between truncated data1 and data2)
     """
-    if len(data1) != len(data2):
-        raise ValueError(f"Arrays have different lengths: {len(data1)} vs {len(data2)}")
-    
-    error = data1 - data2
+    # Use minimum length
+    min_len = min(len(data1), len(data2))
+    d1 = data1[:min_len]
+    d2 = data2[:min_len]
+
+    # Error signal
+    error = d1 - d2
+
+    # RMSE calculation
     mse = np.mean(error ** 2)
     rmse = np.sqrt(mse)
-    return (10*np.log10(rmse)), error
 
-def plot_error_analysis(data1, data2, error, fs=1000):
+    return (10 * np.log10(rmse)), error, min_len
+
+
+def plot_error_analysis(data1, data2, error,min_len, fs=16000):
     """
     Plot the original signals and their error.
     
@@ -60,27 +70,27 @@ def plot_error_analysis(data1, data2, error, fs=1000):
         Sampling frequency in Hz (default: 1000)
     """
     # Create time vector
-    t = np.arange(len(data1)) / fs
+    t = np.arange(len(data1[:min_len])) / fs
     
     # Create figure with subplots
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 10))
     
     # Plot first signal
-    ax1.plot(t, data1, label='Signal 1')
+    ax1.plot(t, data1[:min_len], label='Signal 1')
     ax1.set_title('Signal 1 (Python Implementation)')
     ax1.set_xlabel('Time (s)')
     ax1.set_ylabel('Amplitude')
     ax1.grid(True)
     
     # Plot second signal
-    ax2.plot(t, data2, label='Signal 2', color='orange')
+    ax2.plot(t, data2[:min_len], label='Signal 2', color='orange')
     ax2.set_title('Signal 2 (C Implementation)')
     ax2.set_xlabel('Time (s)')
     ax2.set_ylabel('Amplitude')
     ax2.grid(True)
     
     # Plot error signal
-    ax3.plot(t, error, label='Error', color='red')
+    ax3.plot(t, error[:min_len], label='Error', color='red')
     ax3.set_title('Error Signal (Signal 1 - Signal 2)')
     ax3.set_xlabel('Time (s)')
     ax3.set_ylabel('Amplitude')
@@ -116,7 +126,7 @@ def main():
         data2 = read_float_file(args.file2)
         
         # Calculate RMSE and get error signal
-        rmse, error = calculate_rmse(data1, data2)
+        rmse, error, min_len = calculate_rmse(data1, data2)
         
         # Print results
         print("\nResults:")
@@ -132,7 +142,7 @@ def main():
         
         # Plot signals and error if not disabled
         if not args.no_plot:
-            plot_error_analysis(data1, data2, error, args.fs)
+            plot_error_analysis(data1, data2, error, min_len, args.fs)
     except Exception as e:
         print(f"Error: {str(e)}")
         return 1

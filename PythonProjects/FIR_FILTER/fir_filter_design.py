@@ -111,51 +111,36 @@ def plot_filter_response(b, fs):
     plt.tight_layout()
     plt.show()
 
-def generate_test_signal(fs, duration, seed=42):
+def read_pcm_as_float(filename, dtype=np.int16, channels=1, normalize=True):
     """
-    Generate a test signal with varying dynamic range.
-    
+    Read a raw PCM file and return samples as float32 values.
+
     Parameters:
-    -----------
-    fs : float
-        Sampling frequency in Hz
-    duration : float
-        Signal duration in seconds
-    seed : int
-        Random seed for reproducibility (default: 42)
-        
+        filename (str): Path to .pcm file
+        dtype (np.dtype): Data type of PCM (e.g., np.int16, np.int32, np.uint8, np.float32)
+        channels (int): Number of channels (1 = mono, 2 = stereo, etc.)
+        normalize (bool): If True, scale integer PCM to [-1.0, 1.0]
+
     Returns:
-    --------
-    x : ndarray
-        Test signal
+        np.ndarray: Audio samples as float32, shape (num_samples,) or (num_frames, channels)
     """
-    # Set random seed for reproducibility
-    np.random.seed(seed)
-    
-    t = np.arange(0, duration, 1/fs)
-    
-    # Create components with different frequencies and amplitudes
-    signal = np.zeros_like(t)
-    
-    # Low frequency component with increasing amplitude
-    signal += np.sin(2 * np.pi * 50 * t) * (1 + t/duration)
-    
-    # Medium frequency component with varying amplitude
-    signal += 0.5 * np.sin(2 * np.pi * 150 * t) * np.sin(2 * np.pi * 1 * t)
-    
-    # High frequency component with decreasing amplitude
-    signal += 0.3 * np.sin(2 * np.pi * 300 * t) * (1 - t/duration)
-    
-    # Add some random bursts with fixed positions
-    burst_points = np.random.randint(0, len(t), 5)
-    for point in burst_points:
-        if point < len(t) - 100:  # Ensure we don't go out of bounds
-            signal[point:point+100] += 2 * np.random.randn(100)
-    
-    # Reset random seed to avoid affecting other parts of the code
-    np.random.seed(None)
-    
-    return signal
+    with open(filename, "rb") as f:
+        raw_data = f.read()
+
+    # Convert to NumPy array
+    pcm_data = np.frombuffer(raw_data, dtype=dtype)
+
+    # Handle multi-channel
+    if channels > 1:
+        pcm_data = pcm_data.reshape(-1, channels)
+
+    # Normalize if integer type
+    if normalize and np.issubdtype(dtype, np.integer):
+        float_data = pcm_data.astype(np.float32) / np.iinfo(dtype).max
+    else:
+        float_data = pcm_data.astype(np.float32)
+
+    return float_data
 
 def process_signal_in_frames(x, b, frame_size):
     """
@@ -206,9 +191,9 @@ def process_signal_in_frames(x, b, frame_size):
 # Example usage
 if __name__ == "__main__":
     # Example filter specifications
-    fs = 1000        # Sampling frequency (Hz)
-    fpass = 100      # Passband frequency (Hz)
-    fstop = 250      # Stopband frequency (Hz) - Increased for wider transition band
+    fs = 16000        # Sampling frequency (Hz)
+    fpass = 4000      # Passband frequency (Hz)
+    fstop = 5000      # Stopband frequency (Hz) - Increased for wider transition band
     pass_ripple = 1  # Passband ripple (dB)
     stop_atten = 40  # Stopband attenuation (dB) - Reduced for better convergence
     
@@ -226,39 +211,38 @@ if __name__ == "__main__":
         plot=True  # Show filter response
     )
 
-    np.random.seed(42)
+    #np.random.seed(42)
     # Generate random noise in range [-8, 8]
-    noise = np.random.uniform(-3, 3, size=filter_coeffs.shape)
-    filter_coeffs += noise
-    np.random.seed(None)
+    #noise = np.random.uniform(-3, 3, size=filter_coeffs.shape)
+    #filter_coeffs += noise
+    #np.random.seed(None)
 
     print(f"Filter order: {len(filter_coeffs) - 1}")
     print(f"Number of coefficients: {len(filter_coeffs)}")
-    print(f"filter coefficients data type: max {np.max(filter_coeffs)}, min {np.min(filter_coeffs)},sum {np.sum(np.abs(filter_coeffs))}, noise {np.max(noise)}, noise sum {np.sum(np.abs(noise))}")
+    print(f"filter coefficients data type: max {np.max(filter_coeffs)}, min {np.min(filter_coeffs)},sum {np.sum(np.abs(filter_coeffs))}")
 
     filter_coeffs_float32 = filter_coeffs.astype(np.float32)
     with open('filter_coeffs.bin', 'wb') as f:
         filter_coeffs_float32.tofile(f)
     
     # Generate test signal (3 seconds duration)
-    duration = 3
-    test_signal = generate_test_signal(fs, duration)
-    
+    test_signal = read_pcm_as_float('16khz_speech.pcm')
+    duration = len(test_signal) / fs
     # Convert to float32 and save to binary file
-    test_signal_float32 = test_signal.astype(np.float32)
-    with open('test_signal.bin', 'wb') as f:
-        test_signal_float32.tofile(f)
-    print(f"Test signal data type: max {np.max(test_signal)}, min {np.min(test_signal)}")
-    
+    #test_signal_float32 = test_signal.astype(np.float32)
+    #with open('test_signal.bin', 'wb') as f:
+    #    test_signal_float32.tofile(f)
+    print(f"Test signal data type: max {np.max(test_signal)}, min {np.min(test_signal)},first 10 samples {test_signal[:10]}")
     print(f"\nTest signal info:")
     print(f"Number of samples: {len(test_signal)}")
     print(f"Duration: {duration} seconds")
+    
     #print(f"Data type: {test_signal_float32.dtype}")
     #print(f"File size: {len(test_signal_float32) * 4} bytes")  # float32 = 4 bytes per sample
     
     # Calculate frame size for 30ms frames
-    frame_size = int(0.03 * fs)  # 30ms * 1000Hz = 30 samples
-    print(f"\nProcessing signal with {frame_size} samples per frame (30ms at {fs}Hz)")
+    frame_size = int(0.01 * fs)  # 10ms * 16000Hz = 160 samples
+    print(f"\nProcessing signal with {frame_size} samples per frame (10ms at {fs}Hz)")
     
     # Process signal in frames
     filtered_signal = process_signal_in_frames(test_signal, filter_coeffs, frame_size)

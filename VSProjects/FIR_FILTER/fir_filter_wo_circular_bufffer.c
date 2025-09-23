@@ -65,9 +65,9 @@ float fixed_to_float_conv_16bit(Word16 x, Word16 qfactor)
 }
 
 #ifdef USE_FIXED_PT_CODE
-INPT_TYPE delay_line_fxd[12 + 30];
+INPT_TYPE delay_line_fxd[26 + 160];
 #else
-float delay_line[12 + 30];
+float delay_line[26 + 160];
 #endif
 
 #ifdef USE_FIXED_PT_CODE
@@ -139,9 +139,9 @@ void fir_filter(float* in, float* coeffs, float* out, Word32 num_of_filt_coeffs,
 int main(void)
 {
     FILE *fcoeffs, *finput, *fout;
-    float in[30], coeffs[13],out[30];
-    COEFF_TYPE coeffs_fxd_pt[13];
-    INPT_TYPE in_fxd_pt[30], temp, out_fxd_pt[30];
+    float in[160], coeffs[27],out[160];
+    COEFF_TYPE coeffs_fxd_pt[27];
+    INPT_TYPE in_fxd_pt[160], temp, out_fxd_pt[160];
     int i,j;
 #ifdef PROFILE_CODE
     long seconds;
@@ -150,57 +150,49 @@ int main(void)
 #endif
 
     fcoeffs = fopen("..\\..\\PythonProjects\\FIR_FILTER\\filter_coeffs.bin","rb");
-    finput = fopen("..\\..\\PythonProjects\\FIR_FILTER\\test_signal.bin", "rb");
+    finput = fopen("..\\..\\PythonProjects\\FIR_FILTER\\16khz_speech.pcm", "rb");
     fout = fopen("out_msvc_wo_circ_buffer.bin","wb");
 
-    fread(coeffs,13,sizeof(float),fcoeffs);
+    fread(coeffs,27,sizeof(float),fcoeffs);
 #ifdef USE_FIXED_PT_CODE
     if (sizeof(COEFF_TYPE) == 4)
     {
-        for (i = 0; i < 13; i++)
+        for (i = 0; i < 27; i++)
         {
-            coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
+            coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 1)); //for using Gaurd bits 2, without Gaurd bits 5
         }
     }
     else
     {
-        for (i = 0; i < 13; i++)
+        for (i = 0; i < 27; i++)
         {
-            coeffs_fxd_pt[i] = float_to_fixed_conv_16bit(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
+            coeffs_fxd_pt[i] = float_to_fixed_conv_16bit(coeffs[i], (COEFF_PRECISION_BITS - 1)); //for using Gaurd bits 2, without Gaurd bits 5
         }
     }
-
-    for (i = 0; i < (12+30); i++)
+#endif
+#ifdef USE_FIXED_PT_CODE
+    for (i = 0; i < (26+160); i++)
     {
         delay_line_fxd[i] = 0;
+    }
+#else
+    for (i = 0; i < (26 + 160); i++)
+    {
+        delay_line[i] = 0.0f;
     }
 #endif
     
     while(1)
     {
-        temp = fread(in, sizeof(float), 30, finput);
-        if (temp < 30)
+        temp = fread(in_fxd_pt, sizeof(short), 160, finput);
+        if (temp < 160)
             break;
 #ifdef USE_FIXED_PT_CODE
-        if (sizeof(INPT_TYPE) == 4)
-        {
-            for (i = 0; i < 30; i++)
-            {
-                in_fxd_pt[i] = float_to_fixed_conv(in[i], (INPT_PRECISION_BITS - 3));
-            }
-        }
-        else
-        {
-            for (i = 0; i < 30; i++)
-            {
-                in_fxd_pt[i] = float_to_fixed_conv_16bit(in[i], (INPT_PRECISION_BITS - 3));
-            }
-        }
 #ifdef PROFILE_CODE
         struct timeval start, end;
         gettimeofday(&start, NULL);
 #endif
-        fir_filter_fxd_pt(in_fxd_pt, coeffs_fxd_pt, out_fxd_pt, 13, 30);
+        fir_filter_fxd_pt(in_fxd_pt, coeffs_fxd_pt, out_fxd_pt, 27, 160);
 #ifdef PROFILE_CODE
         gettimeofday(&end, NULL);
         seconds = (end.tv_sec - start.tv_sec);
@@ -209,22 +201,26 @@ int main(void)
 #endif
         if (sizeof(INPT_TYPE) == 4)
         {
-            for (i = 0; i < 30; i++)
+            for (i = 0; i < 160; i++)
             {
-                out[i] = fixed_to_float_conv(out_fxd_pt[i], (INPT_PRECISION_BITS - 8));
+                out[i] = fixed_to_float_conv(out_fxd_pt[i], (INPT_PRECISION_BITS - 1));
             }
         }
         else
         {
-            for (i = 0; i < 30; i++)
+            for (i = 0; i < 160; i++)
             {
-                out[i] = fixed_to_float_conv_16bit(out_fxd_pt[i], (INPT_PRECISION_BITS - 8));
+                out[i] = fixed_to_float_conv_16bit(out_fxd_pt[i], (INPT_PRECISION_BITS - 1));
             }
         }
 #else
-        fir_filter(in, coeffs, out, 13, 30);
+        for (i = 0; i < 160; i++)
+        {
+            in[i] = fixed_to_float_conv(in_fxd_pt[i], INPT_PRECISION_BITS);
+        }
+        fir_filter(in, coeffs, out, 27, 160);
 #endif
-        fwrite(out,30,sizeof(float),fout);
+        fwrite(out,160,sizeof(float),fout);
     }
 #ifdef PROFILE_CODE
     printf("elapsed_time = %lf\n",elapsed);
