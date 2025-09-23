@@ -129,6 +129,7 @@ def main():
         rmse, error, min_len = calculate_rmse(data1, data2)
         
         # Print results
+        print(f"min_len: {min_len}")
         print("\nResults:")
         print(f"RMSE: {rmse:.6f} dB")
         

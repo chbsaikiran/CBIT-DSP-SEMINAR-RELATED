@@ -94,7 +94,7 @@ void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out, INPT_T
         {
             acc = s64_mla_s32_s32(acc, (*coeffp++), (*inputp--));
         }
-        //acc = acc << (64 - 32 - 3);
+        //acc = acc << (64 - 48 - 1);
         //out[n] = (INPT_TYPE)(((acc >> 46) + 1) >> 1);
         out[n] = (INPT_TYPE)(((acc >> (INTER_PRECISION_BITS- 1)) + 1) >> 1);
     }
