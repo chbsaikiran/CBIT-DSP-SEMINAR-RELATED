@@ -17,11 +17,11 @@
 #define Word32 int
 #define Word16 short
 
-#define COEFF_TYPE Word16
-#define INPT_TYPE Word16
+#define COEFF_TYPE Word32
+#define INPT_TYPE Word32
 #define INTER_TYPE Word64
-#define COEFF_PRECISION_BITS 15
-#define INPT_PRECISION_BITS 15
+#define COEFF_PRECISION_BITS 31
+#define INPT_PRECISION_BITS 31
 
 INTER_TYPE s64_mul_s32_s32(COEFF_TYPE x, INPT_TYPE y)
 {
@@ -93,9 +93,10 @@ void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out, INPT_T
         {
             acc = s64_mla_s32_s32(acc, (*coeffp++), (*inputp--));
         }
-        acc = acc << (64 - 32 - 3);
-        out[n] = (INPT_TYPE)(((acc >> 46) + 1) >> 1);
+        //acc = acc << (64 - 32 - 3);
+        //out[n] = (INPT_TYPE)(((acc >> 46) + 1) >> 1);
         //out[n] = (INPT_TYPE)(((acc >> 14) + 1) >> 1);
+        out[n] = (INPT_TYPE)(acc >> 31);
     }
     // shift input samples back in time for next time
     memmove( &delay_line_fxd[0], &delay_line_fxd[frame_size],
@@ -103,13 +104,13 @@ void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out, INPT_T
  
 }
 #else
-void fir_filter(float* in, float* coeffs, float* out, Word32 num_of_filt_coeffs, VAR_TYPE_S frame_size)
+void fir_filter(float* in, float* coeffs, float* out, Word32 num_of_filt_coeffs, INPT_TYPE frame_size)
 {
     float acc;     // accumulator for MACs
     float* coeffp; // pointer to coefficients
     float* inputp; // pointer to input samples
-    VAR_TYPE_S n;
-    VAR_TYPE_S k;
+    INPT_TYPE n;
+    INPT_TYPE k;
 
     // put the new samples at the high end of the buffer
     memcpy(&delay_line[num_of_filt_coeffs - 1], in,
@@ -156,7 +157,7 @@ int main(void)
 #ifdef USE_FIXED_PT_CODE
     for (i = 0; i < 13; i++)
     {
-        coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 2));
+        coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 5));
     }
 
     for (i = 0; i < (12+30); i++)
