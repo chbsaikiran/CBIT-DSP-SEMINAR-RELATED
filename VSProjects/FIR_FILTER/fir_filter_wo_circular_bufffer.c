@@ -17,15 +17,18 @@
 #define Word32 int
 #define Word16 short
 
-#define FRAME_SIZE 441
-#define FILT_SIZE 113
+#define FRAME_SIZE 160
+#define FILT_SIZE 27
 #define COEFF_TYPE Word16
 #define INPT_TYPE Word16
-#define OUT_TYPE Word32
+#define OUT_TYPE Word16
 #define INTER_TYPE Word64
 #define COEFF_PRECISION_BITS 15
 #define INPT_PRECISION_BITS 15
-#define OUT_PRECISION_BITS 31
+#define OUT_PRECISION_BITS 15
+
+//ceoff 32, inpt 16, out 32 -> rmse : -63.722191 dB
+//ceoff 16, inpt 16, out 16 -> rmse : -47.440739 dB
 
 INTER_TYPE s64_mul_s32_s32(COEFF_TYPE x, INPT_TYPE y)
 {
@@ -98,9 +101,8 @@ void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, OUT_TYPE* out, INPT_TY
             acc = s64_mla_s32_s32(acc, (*coeffp++), (*inputp--));
         }
         //acc = acc << (64 - 48 - 1);
-        //out[n] = (OUT_TYPE)(((acc >> 46) + 1) >> 1);
-        //out[n] = (OUT_TYPE)(((acc >> (OUT_PRECISION_BITS - 1)) + 1) >> 1);
-        out[n] = (OUT_TYPE)(acc);
+        //out[n] = (OUT_TYPE)(((acc >> 31) + 1) >> 1);
+        out[n] = (OUT_TYPE)(((acc >> (15 - 1)) + 1) >> 1);
     }
     // shift input samples back in time for next time
     memmove( &delay_line_fxd[0], &delay_line_fxd[frame_size],
@@ -155,7 +157,7 @@ int main(void)
 #endif
 
     fcoeffs = fopen("..\\..\\PythonProjects\\FIR_FILTER\\filter_coeffs.bin","rb");
-    finput = fopen("..\\..\\PythonProjects\\FIR_FILTER\\test_signal.bin", "rb");
+    finput = fopen("..\\..\\PythonProjects\\FIR_FILTER\\16khz_speech.pcm", "rb");
     fout = fopen("out_msvc_wo_circ_buffer.bin","wb");
 
     fread(coeffs,FILT_SIZE,sizeof(float),fcoeffs);
@@ -189,24 +191,10 @@ int main(void)
     
     while(1)
     {
-        temp = fread(in, sizeof(float), FRAME_SIZE, finput);
+        temp = fread(in_fxd_pt, sizeof(short), FRAME_SIZE, finput);
         if (temp < FRAME_SIZE)
             break;
 #ifdef USE_FIXED_PT_CODE
-        if (sizeof(INPT_TYPE) == 4)
-        {
-            for (i = 0; i < FRAME_SIZE; i++)
-            {
-                in_fxd_pt[i] = float_to_fixed_conv(in[i], (INPT_PRECISION_BITS - 0));
-            }
-        }
-        else
-        {
-            for (i = 0; i < FRAME_SIZE; i++)
-            {
-                in_fxd_pt[i] = float_to_fixed_conv_16bit(in[i], (INPT_PRECISION_BITS - 0));
-            }
-        }
 #ifdef PROFILE_CODE
         struct timeval start, end;
         gettimeofday(&start, NULL);
@@ -229,10 +217,14 @@ int main(void)
         {
             for (i = 0; i < FRAME_SIZE; i++)
             {
-                out[i] = fixed_to_float_conv_16bit(out_fxd_pt[i], (OUT_PRECISION_BITS - 1));
+                out[i] = (fixed_to_float_conv_16bit(out_fxd_pt[i], (OUT_PRECISION_BITS - 1)));
             }
         }
 #else
+        for (i = 0; i < FRAME_SIZE; i++)
+        {
+            in[i] = fixed_to_float_conv_16bit(in_fxd_pt[i], (INPT_PRECISION_BITS - 0));
+        }
         fir_filter(in, coeffs, out, FILT_SIZE, FRAME_SIZE);
 #endif
         fwrite(out,FRAME_SIZE,sizeof(float),fout);

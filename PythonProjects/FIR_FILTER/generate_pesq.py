@@ -117,7 +117,7 @@ def main():
         sf.write("clean.wav", clean_signal, int(args.sr1), subtype="FLOAT")
         degrade_signal = read_float_file(args.degraded_file)
         sf.write("degrade.wav", degrade_signal, int(args.sr2), subtype="FLOAT")
-        score = calculate_pesq("clean.wav", "degrade.wav", mode="nb")
+        score = calculate_pesq("clean.wav", "degrade.wav", mode="wb")
         print("PESQ score:", score)
     except Exception as e:
         print(f"Error: {str(e)}")
