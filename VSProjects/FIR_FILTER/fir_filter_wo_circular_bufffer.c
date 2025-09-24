@@ -27,8 +27,8 @@
 #define INPT_PRECISION_BITS 15
 #define OUT_PRECISION_BITS 15
 
-//ceoff 32, inpt 16, out 32 -> rmse : -63.722191 dB
-//ceoff 16, inpt 16, out 16 -> rmse : -47.440739 dB
+//ceoff 32, inpt 16, out 32 -> rmse : -127.444382 dB
+//ceoff 16, inpt 16, out 16 -> rmse : -94.881477 dB
 
 INTER_TYPE s64_mul_s32_s32(COEFF_TYPE x, INPT_TYPE y)
 {
