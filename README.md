@@ -1,153 +1,126 @@
-# FIR Filter Implementation and Comparison
+# FIR Filter Implementation and Analysis
 
-This project implements a Finite Impulse Response (FIR) filter in both Python and C, demonstrating different implementation approaches and comparing their performance. The project includes filter design, test signal generation, frame-based processing, and tools for comparing different implementations.
+This project provides a comprehensive implementation of FIR (Finite Impulse Response) filters in both Python and C, along with tools for analysis, comparison, and quality assessment. It's designed for educational purposes to demonstrate digital signal processing concepts and compare different implementation approaches.
 
 ## Project Structure
 
+### Python Implementation (`PythonProjects/FIR_FILTER/`)
+
+1. **`fir_filter_design.py`**
+   - Core FIR filter implementation using the Remez exchange algorithm
+   - Features:
+     - Filter coefficient design with customizable parameters
+     - Frame-based processing for real-time applications
+     - Visualization of frequency and impulse responses
+     - PCM audio file handling
+
+2. **`calculate_rmse.py`**
+   - Tool for comparing filter implementations
+   - Calculates Root Mean Square Error (RMSE) between two signals
+   - Provides visual analysis of signal differences
+   - Useful for validating C vs Python implementations
+
+3. **`downsample.py`**
+   - Basic downsampling implementation
+   - Reduces sample rate by skipping samples
+   - Supports various input file formats
+
+4. **`generate_pesq.py`**
+   - PESQ (Perceptual Evaluation of Speech Quality) calculation
+   - Supports both narrow-band (8kHz) and wide-band (16kHz)
+   - Converts between different audio formats
+   - Objective quality assessment of processed audio
+
+5. **`resample_signal.py`**
+   - Advanced signal resampling implementation
+   - Proper interpolation methods for sample rate conversion
+
+### C Implementation (`VSProjects/FIR_FILTER/`)
+
+1. **`fir_filter_wo_circular_buffer.c`**
+   - Direct FIR filter implementation in C
+   - Demonstrates low-level signal processing
+   - Useful for performance comparisons
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   ```
+
+2. Install Python dependencies:
+   ```bash
+   cd PythonProjects/FIR_FILTER
+   pip install -r requirements.txt
+   ```
+
+3. For the C implementation:
+   - Use Visual Studio to build the project in `VSProjects/FIR_FILTER/`
+   - Or compile directly using your preferred C compiler
+
+## Usage
+
+### Python FIR Filter
+
+```python
+# Example usage of FIR filter design
+from fir_filter_design import design_fir_filter
+
+# Design a lowpass filter
+filter_coeffs = design_fir_filter(
+    fs=16000,        # Sampling frequency (Hz)
+    fpass=4000,      # Passband frequency (Hz)
+    fstop=5000,      # Stopband frequency (Hz)
+    pass_ripple=1,   # Passband ripple (dB)
+    stop_atten=40,   # Stopband attenuation (dB)
+    plot=True        # Show filter response
+)
 ```
-├── PythonProjects/
-│   └── FIR_FILTER/
-│       ├── fir_filter_design.py    # Main Python implementation
-│       ├── calculate_rmse.py       # Utility for comparing outputs
-│       └── requirements.txt        # Python dependencies
-│
-└── VSProjects/
-    └── FIR_FILTER/
-        ├── fir_filter_with_circular_buffer.c    # C implementation with circular buffer
-        └── fir_filter_wo_circular_bufffer.c     # C implementation without circular buffer
+
+### Comparing Implementations
+
+```bash
+# Compare Python and C implementations
+python calculate_rmse.py python_output.bin c_output.bin --verbose
+```
+
+### Quality Assessment
+
+```bash
+# Calculate PESQ score
+python generate_pesq.py original.pcm 16000 processed.pcm 16000
+```
+
+### Resampling
+
+```bash
+# Downsample a signal
+python downsample.py input.pcm output.pcm 2  # Skip every other sample
 ```
 
 ## Features
 
-- FIR filter design using Parks-McClellan (Remez) algorithm
-- Test signal generation with varying dynamic range
-- Frame-based signal processing (30ms frames)
-- Both floating-point and fixed-point implementations
-- Performance comparison tools
-- Visualization of filter responses and signals
+- FIR filter design using Remez exchange algorithm
+- Frame-based processing for real-time applications
+- Multiple implementation comparisons (Python vs C)
+- Signal quality assessment tools
+- Comprehensive visualization capabilities
+- Support for various audio formats
+- Performance analysis tools
 
-## Requirements
+## Dependencies
 
-### Python Implementation
-- Python 3.10 or higher
-- Required packages (install using `pip install -r requirements.txt`):
-  - numpy
-  - scipy
-  - matplotlib
-
-### C Implementation
-- Visual Studio 2022 or compatible C compiler
-- Windows environment (for VS projects)
-
-## Running the Code
-
-### 1. Python Implementation
-
-1. Set up Python environment:
-   ```bash
-   cd PythonProjects/FIR_FILTER
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-
-2. Run the filter design and processing:
-   ```bash
-   python fir_filter_design.py
-   ```
-   This will:
-   - Design the FIR filter
-   - Generate and process test signals
-   - Save results in binary files
-   - Display filter response and signal plots
-
-### 2. C Implementation
-
-1. Open the solution in Visual Studio:
-   - Navigate to `VSProjects/FIR_FILTER`
-   - Open `fir_filter_project.sln`
-
-2. Build and run the project:
-   - Select Release configuration
-   - Build the solution (F7)
-   - Run the program (F5)
-
-### 3. Comparing Results
-
-Use the RMSE calculator to compare outputs:
-```bash
-cd PythonProjects/FIR_FILTER
-python calculate_rmse.py filtered_signal.bin ../../VSProjects/FIR_FILTER/out_msvc_wo_circ_buffer.bin
-```
-
-## Filter Specifications
-
-The default filter parameters are:
-- Sampling frequency: 1000 Hz
-- Passband frequency: 100 Hz
-- Stopband frequency: 250 Hz
-- Passband ripple: 1 dB
-- Stopband attenuation: 40 dB
-
-## Test Signal Characteristics
-
-The test signal includes:
-- Low frequency (50 Hz) with increasing amplitude
-- Medium frequency (150 Hz) with amplitude modulation
-- High frequency (300 Hz) with decreasing amplitude
-- Random bursts at fixed positions (controlled by seed)
-- Duration: 3 seconds
-
-## Implementation Details
-
-### Python Version
-- Uses SciPy's `signal.remez` for filter design
-- Implements frame-based processing with proper overlap handling
-- Generates test signals with controlled randomness
-- Saves data in float32 binary format
-
-### C Version
-- Implements both circular and linear buffer approaches
-- Supports fixed-point arithmetic for optimization
-- Processes signals in frames
-- Handles file I/O for coefficients and signals
-
-## Verification
-
-1. Check filter response plots:
-   - Verify frequency response meets specifications
-   - Examine impulse response characteristics
-
-2. Compare signal plots:
-   - Original vs filtered signal
-   - Check for proper filtering effects
-   - Verify no artifacts at frame boundaries
-
-3. Use RMSE calculator:
-   - Compare Python and C implementations
-   - Check detailed statistics with `-v` flag
-
-## Common Issues and Solutions
-
-1. **Filter Design Fails to Converge**
-   - Increase transition width between passband and stopband
-   - Reduce filter order
-   - Relax ripple/attenuation requirements
-
-2. **Frame Processing Artifacts**
-   - Verify overlap-add implementation
-   - Check frame size and overlap calculations
-   - Ensure proper buffer management
-
-3. **Binary File Issues**
-   - Verify file paths are correct
-   - Check endianness if comparing across platforms
-   - Ensure float32 format is consistent
+- numpy==1.24.3
+- scipy==1.10.1
+- matplotlib==3.7.1
+- soundfile==0.12.1
+- pesq==0.0.4
 
 ## Contributing
 
-Feel free to submit issues and enhancement requests!
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is open-source and available under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.
