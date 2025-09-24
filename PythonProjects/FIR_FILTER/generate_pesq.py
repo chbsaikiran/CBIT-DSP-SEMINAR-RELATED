@@ -1,4 +1,7 @@
 import numpy as np
+import soundfile as sf
+from pesq import pesq
+from scipy.signal import resample_poly
 import argparse
 import matplotlib.pyplot as plt
 import os
@@ -58,42 +61,64 @@ def read_float_file(filename):
     except Exception as e:
         raise IOError(f"Error reading file {filename}: {str(e)}")
 
-def skip_samples(input_filename, output_filename, skip):
+
+def calculate_pesq(clean_file, degraded_file, mode="wb"):
     """
-    Reads float values from input file, skips samples, and writes the result as binary float32.
+    Calculate PESQ score between a clean and degraded speech signal.
 
     Parameters:
     -----------
-    input_filename : str
-        Path to the input file containing float values (one per line).
-    output_filename : str
-        Path to the output file (binary floats).
-    skip : int
-        Skip value (e.g., 1 -> take every other sample: 0, 2, 4, ...).
+    clean_file : str
+        Path to clean reference speech file (.wav)
+    degraded_file : str
+        Path to degraded speech file (.wav)
+    mode : str
+        "nb" for narrow-band (8 kHz), "wb" for wide-band (16 kHz)
+
+    Returns:
+    --------
+    pesq_score : float
+        PESQ MOS score
     """
 
-    data = read_float_file(input_filename)  # assumes this returns a list/array of floats
+    # Load signals
+    clean, sr_c = sf.read(clean_file)
+    degraded, sr_d = sf.read(degraded_file)
 
-    # Select every (skip+1)-th element
-    selected = data[::skip+1]
+    # Ensure mono
+    if clean.ndim > 1:
+        clean = clean[:, 0]
+    if degraded.ndim > 1:
+        degraded = degraded[:, 0]
 
-    selected_float32 = selected.astype(np.float32)
-    with open(output_filename, 'wb') as f:
-        selected_float32.tofile(f)
+    # Resample to match ITU required rates
+    target_sr = 16000 if mode == "wb" else 8000
+    if sr_c != target_sr:
+        clean = resample_poly(clean, target_sr, sr_c)
+    if sr_d != target_sr:
+        degraded = resample_poly(degraded, target_sr, sr_d)
 
-    print(f"Wrote {len(selected)} float32 samples to {output_filename}")
+    # Compute PESQ
+    score = pesq(target_sr, clean, degraded, mode)
+    return score
 
 def main():
     # Set up command line argument parser
-    parser = argparse.ArgumentParser(description='Calculate RMSE between two files containing float32 values')
-    parser.add_argument('file1', help='Path to first file')
-    parser.add_argument('file2', help='Path to second file')
-    parser.add_argument('skip', help='Skip value')
+    parser = argparse.ArgumentParser(description='Calculate PESQ between two files containing float32 values')
+    parser.add_argument('clean_file', help='Path to clean_file')
+    parser.add_argument('sr1', help='sampling freq in Hz of clean file')
+    parser.add_argument('degraded_file', help='Path to degraded_file')
+    parser.add_argument('sr2', help='sampling freq in Hz of degraded file')
     
     args = parser.parse_args()
     
     try:
-        skip_samples(args.file1, args.file2, int(args.skip))
+        clean_signal = read_float_file(args.clean_file)
+        sf.write("clean.wav", clean_signal, int(args.sr1), subtype="FLOAT")
+        degrade_signal = read_float_file(args.degraded_file)
+        sf.write("degrade.wav", degrade_signal, int(args.sr2), subtype="FLOAT")
+        score = calculate_pesq("clean.wav", "degrade.wav", mode="nb")
+        print("PESQ score:", score)
     except Exception as e:
         print(f"Error: {str(e)}")
         return 1
