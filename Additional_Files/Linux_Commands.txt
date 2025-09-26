@@ -1,0 +1,15 @@
+# Commnads for Installation of cross compiler and emulator
+
+sudo apt update
+sudo apt install qemu-user qemu-user-static
+sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+sudo apt install qemu-user qemu-user-static
+
+#################################################################################################################################
+#################################################################################################################################
+
+#Commands to compile and run arm executable 
+
+arm-linux-gnueabihf-gcc -static -O3 -mfpu=neon-vfpv4 -mfloat-abi=hard -march=armv7-a -mtune=cortex-a9 -o fir_filter_armv7 fir_filter_when_no_circular_addressing_arm_opt.c -lm
+
+qemu-arm ./fir_filter_armv7
