@@ -44,7 +44,7 @@ def calculate_rmse(data1, data2):
     error = data1 - data2
     mse = np.mean(error ** 2)
     rmse = np.sqrt(mse)
-    return (10*np.log10(rmse)), error
+    return (20*np.log10(rmse)), error
 
 def plot_error_analysis(data1, data2, error, fs=1000):
     """
