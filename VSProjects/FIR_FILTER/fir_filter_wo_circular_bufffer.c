@@ -5,7 +5,12 @@
 #include <string.h>
 
 #define USE_FIXED_PT_CODE
-//#define PROFILE_CODE
+#define USE_ARM_NEON_OPT
+#define PROFILE_CODE
+
+#ifdef USE_ARM_NEON_OPT
+#include "arm_neon.h"
+#endif
 
 #ifdef PROFILE_CODE
 #include <sys/time.h>
@@ -19,12 +24,12 @@
 
 #define FRAME_SIZE 30
 #define FILT_SIZE 13
-#define COEFF_TYPE Word16
-#define INPT_TYPE Word16
+#define COEFF_TYPE Word32
+#define INPT_TYPE Word32
 #define INTER_TYPE Word64
-#define COEFF_PRECISION_BITS 15
-#define INPT_PRECISION_BITS 15
-#define INTER_PRECISION_BITS 15
+#define COEFF_PRECISION_BITS 31
+#define INPT_PRECISION_BITS 31
+#define INTER_PRECISION_BITS 31
 
 INTER_TYPE s64_mul_s32_s32(COEFF_TYPE x, INPT_TYPE y)
 {
@@ -73,6 +78,7 @@ float delay_line[(FILT_SIZE - 1) + FRAME_SIZE];
 #endif
 
 #ifdef USE_FIXED_PT_CODE
+#ifndef USE_ARM_NEON_OPT
 void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out, INPT_TYPE num_of_filt_coeffs, INPT_TYPE frame_size)
 {
     INTER_TYPE acc;     // accumulator for MACs
@@ -98,13 +104,83 @@ void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out, INPT_T
         }
         //acc = acc << (64 - 32 - 3);
         //out[n] = (INPT_TYPE)(((acc >> 46) + 1) >> 1);
-        out[n] = (INPT_TYPE)(((acc >> (INTER_PRECISION_BITS- 1)) + 1) >> 1);
+        out[n] = (INPT_TYPE)(acc >> (INTER_PRECISION_BITS));
     }
     // shift input samples back in time for next time
     memmove( &delay_line_fxd[0], &delay_line_fxd[frame_size],
             (num_of_filt_coeffs - 1) * sizeof(INPT_TYPE));
  
 }
+#else
+void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out,INPT_TYPE num_of_filt_coeffs, INPT_TYPE frame_size)
+{
+    Word64 acc1,acc2;     // accumulator for MACs
+    COEFF_TYPE *coeffp; // pointer to coefficients
+    INPT_TYPE *inputp,*inputp1; // pointer to input samples
+    INPT_TYPE n,len,rem;
+    INPT_TYPE k;
+    int32x4_t q0,q1,q2,q3;
+    int64x2_t q5,q4,q6,q7;
+    int64x1_t d12,d13,d14,d15;
+    int32x2_t d0;
+ 
+    // put the new samples at the high end of the buffer
+    memcpy( &delay_line_fxd[num_of_filt_coeffs - 1], in,
+            frame_size * sizeof(int) );
+ 
+    // apply the filter to each input sample
+    for ( n = 0; n < frame_size; n+=2 ) 
+    {
+        // calculate out n
+        coeffp = &coeffs[num_of_filt_coeffs-1];
+        inputp = &delay_line_fxd[num_of_filt_coeffs + n];
+        inputp1 = inputp - 1;
+        acc1 = 0;
+        acc2 = 0;
+        len = num_of_filt_coeffs >> 2;
+        rem = num_of_filt_coeffs & 3;
+        while(rem--)
+        {
+            acc1 = s64_mla_s32_s32(acc1, (*coeffp), (*inputp--));
+            acc2 = s64_mla_s32_s32(acc2, (*coeffp), (*inputp1--));
+            coeffp--;
+        }
+        d14 = vdup_n_s64(acc2);
+        d15 = vdup_n_s64(acc1);
+        q7 = vcombine_s64(d14,d15);
+        coeffp = coeffp - 3;
+        inputp = inputp - 3;
+        inputp1 = inputp1 - 3;
+        q4 = vdupq_n_s64(0);
+        q5 = vdupq_n_s64(0);
+        while(len--) 
+        {
+            //acc = s64_mla_s32_s32(acc, (*coeffp--), (*inputp--));
+            q0 = vld1q_s32(((int32_t*)coeffp)); //3 2 1 0
+            q1 = vld1q_s32(((int32_t*)inputp)); //7 6 5 4
+            inputp -= 4;
+            coeffp -= 4;
+            q2 = vld1q_s32(((int32_t*)inputp1)); //6 5 4 3
+            inputp1 -= 4;
+            q5 = vmlal_s32(q5,vget_low_s32(q0),vget_low_s32(q1));
+            q4 = vmlal_s32(q4,vget_low_s32(q0),vget_low_s32(q2));
+            q5 = vmlal_s32(q5,vget_high_s32(q0),vget_high_s32(q1));
+            q4 = vmlal_s32(q4,vget_high_s32(q0),vget_high_s32(q2));
+        }
+        d12 = vadd_s64(vget_low_s64(q4),vget_high_s64(q4));
+        d13 = vadd_s64(vget_low_s64(q5),vget_high_s64(q5));
+        q6 = vcombine_s64(d12,d13);
+        q6 = vaddq_s64(q7,q6);
+        d0 = vshrn_n_s64(q6,31);
+        //out[n] = (Word32)(acc >> 31);
+        vst1_s32(((int32_t*)&out[n]), d0);
+    }
+    // shift input samples back in time for next time
+    memcpy( &delay_line_fxd[0], &delay_line_fxd[frame_size],
+            (num_of_filt_coeffs - 1) * sizeof(int));
+ 
+}
+#endif
 #else
 void fir_filter(float* in, float* coeffs, float* out, Word32 num_of_filt_coeffs, INPT_TYPE frame_size)
 {
@@ -151,9 +227,17 @@ int main(void)
     double elapsed = 0;
 #endif
 
-    fcoeffs = fopen("..\\..\\PythonProjects\\FIR_FILTER\\filter_coeffs.bin","rb");
-    finput = fopen("..\\..\\PythonProjects\\FIR_FILTER\\test_signal.bin", "rb");
-    fout = fopen("out_msvc_wo_circ_buffer.bin","wb");
+    fcoeffs = fopen("filter_coeffs.bin","rb");
+    finput = fopen("test_signal.bin", "rb");
+#ifdef USE_FIXED_PT_CODE
+#ifdef USE_ARM_NEON_OPT
+    fout = fopen("out_linux_wo_circ_buffer_arm_opt.bin","wb");
+#else
+    fout = fopen("out_linux_wo_circ_buffer_wo_arm_opt.bin","wb");
+#endif
+#else
+    fout = fopen("out_linux_wo_circ_buffer_float.bin","wb");
+#endif
 
     fread(coeffs,FILT_SIZE,sizeof(float),fcoeffs);
 #ifdef USE_FIXED_PT_CODE
@@ -176,6 +260,15 @@ int main(void)
     {
         delay_line_fxd[i] = 0;
     }
+
+#ifdef USE_ARM_NEON_OPT
+    for (i = 0; i < FILT_SIZE/2; i++)
+    {
+        temp = coeffs_fxd_pt[i];
+        coeffs_fxd_pt[i] = coeffs_fxd_pt[FILT_SIZE - i - 1];
+        coeffs_fxd_pt[FILT_SIZE - i - 1] = temp;
+    }
+#endif
 #endif
     
     while(1)

@@ -10,6 +10,9 @@ sudo apt install qemu-user qemu-user-static
 
 #Commands to compile and run arm executable 
 
-arm-linux-gnueabihf-gcc -static -O3 -mfpu=neon-vfpv4 -mfloat-abi=hard -march=armv7-a -mtune=cortex-a9 -o fir_filter_armv7 fir_filter_when_no_circular_addressing_arm_opt.c -lm
+arm-linux-gnueabihf-gcc -static -O3 -mfpu=neon-vfpv4 -mfloat-abi=hard -march=armv7-a -mtune=cortex-a9 -o fir_filter_armv7 fir_filter_wo_circular_bufffer.c -lm
 
 qemu-arm ./fir_filter_armv7
+
+python calculate_rmse.py F:\Shared_Folder\out_linux_wo_circ_buffer_arm_opt.bin filtered_signal.bin --no-plot -v
+python calculate_rmse.py F:\Shared_Folder\out_linux_wo_circ_buffer_wo_arm_opt.bin filtered_signal.bin --no-plot -v
