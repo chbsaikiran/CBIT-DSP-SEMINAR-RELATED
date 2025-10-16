@@ -187,14 +187,14 @@ int main(void)
     {
         for (i = 0; i < FILT_SIZE; i++)
         {
-            coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 2)); //for using Gaurd bits 2, without Gaurd bits 5
+            coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
         }
     }
     else
     {
         for (i = 0; i < FILT_SIZE; i++)
         {
-            coeffs_fxd_pt[i] = float_to_fixed_conv_16bit(coeffs[i], (COEFF_PRECISION_BITS - 2)); //for using Gaurd bits 2, without Gaurd bits 5
+            coeffs_fxd_pt[i] = float_to_fixed_conv_16bit(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
         }
     }
 
