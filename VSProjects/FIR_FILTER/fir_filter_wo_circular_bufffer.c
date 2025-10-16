@@ -46,14 +46,40 @@ INTER_TYPE s64_mla_s32_s32(INTER_TYPE sum, COEFF_TYPE x, INPT_TYPE y)
     return sum;
 }
 
+Word32 round_and_clip(float value, Word32 min_val, Word32 max_val) {
+    // Step 1: Round the float to the nearest integer
+    Word32 rounded = (Word32)roundf(value);
+
+    // Step 2: Clip to the given range
+    if (rounded > max_val)
+        rounded = max_val;
+    else if (rounded < min_val)
+        rounded = min_val;
+
+    return rounded;
+}
+
+Word16 round_and_clip_16bit(float value, Word16 min_val, Word16 max_val) {
+    // Step 1: Round the float to the nearest integer
+    Word16 rounded = (Word16)roundf(value);
+
+    // Step 2: Clip to the given range
+    if (rounded > max_val)
+        rounded = max_val;
+    else if (rounded < min_val)
+        rounded = min_val;
+
+    return rounded;
+}
+
 Word32 float_to_fixed_conv(float x, Word32 qfactor)
 {
-    return ((Word32)(x*(pow(2,qfactor))));
+    return round_and_clip(((Word32)(x*(pow(2,qfactor)))), (-((Word32)(2147483647)) - ((Word32)(1))), ((Word32)2147483647));
 }
 
 Word16 float_to_fixed_conv_16bit(float x, Word16 qfactor)
 {
-    return ((Word16)(x*(pow(2,qfactor))));
+    return round_and_clip_16bit(((Word16)(x*(pow(2,qfactor)))), (-((Word32)(32767)) - ((Word32)(1))), ((Word16)32767));
 }
 
 float fixed_to_float_conv(Word32 x, Word32 qfactor)
@@ -97,7 +123,7 @@ void fir_filter_fxd_pt(INPT_TYPE* in, COEFF_TYPE* coeffs, INPT_TYPE* out, INPT_T
             acc = s64_mla_s32_s32(acc, (*coeffp++), (*inputp--));
         }
         //acc = acc << (64 - 32 - 3);
-        //out[n] = (INPT_TYPE)(((acc >> 46) + 1) >> 1);
+        //out[n] = (INPT_TYPE)(((acc >> (47-1)) + 1) >> 1);
         out[n] = (INPT_TYPE)(((acc >> (INTER_PRECISION_BITS- 1)) + 1) >> 1);
     }
     // shift input samples back in time for next time
@@ -161,14 +187,14 @@ int main(void)
     {
         for (i = 0; i < FILT_SIZE; i++)
         {
-            coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
+            coeffs_fxd_pt[i] = float_to_fixed_conv(coeffs[i], (COEFF_PRECISION_BITS - 2)); //for using Gaurd bits 2, without Gaurd bits 5
         }
     }
     else
     {
         for (i = 0; i < FILT_SIZE; i++)
         {
-            coeffs_fxd_pt[i] = float_to_fixed_conv_16bit(coeffs[i], (COEFF_PRECISION_BITS - 5)); //for using Gaurd bits 2, without Gaurd bits 5
+            coeffs_fxd_pt[i] = float_to_fixed_conv_16bit(coeffs[i], (COEFF_PRECISION_BITS - 2)); //for using Gaurd bits 2, without Gaurd bits 5
         }
     }
 
