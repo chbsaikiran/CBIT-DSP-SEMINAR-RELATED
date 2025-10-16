@@ -48,28 +48,34 @@ INTER_TYPE s64_mla_s32_s32(INTER_TYPE sum, COEFF_TYPE x, INPT_TYPE y)
 
 Word32 round_and_clip(float value, Word32 min_val, Word32 max_val) {
     // Step 1: Round the float to the nearest integer
-    Word32 rounded = (Word32)roundf(value);
+    Word64 rounded = (Word64)roundf(value);
+    Word32 final_val;
 
     // Step 2: Clip to the given range
     if (rounded > max_val)
-        rounded = max_val;
+        final_val = max_val;
     else if (rounded < min_val)
-        rounded = min_val;
+        final_val = min_val;
+    else
+        final_val = (Word32)rounded;
 
-    return rounded;
+    return final_val;
 }
 
 Word16 round_and_clip_16bit(float value, Word16 min_val, Word16 max_val) {
     // Step 1: Round the float to the nearest integer
-    Word16 rounded = (Word16)roundf(value);
+    Word64 rounded = (Word64)roundf(value);
+    Word16 final_val;
 
     // Step 2: Clip to the given range
     if (rounded > max_val)
-        rounded = max_val;
+        final_val = max_val;
     else if (rounded < min_val)
-        rounded = min_val;
+        final_val = min_val;
+    else
+        final_val = (Word16)rounded;
 
-    return rounded;
+    return final_val;
 }
 
 Word32 float_to_fixed_conv(float x, Word32 qfactor)
