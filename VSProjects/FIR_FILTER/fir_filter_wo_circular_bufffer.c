@@ -46,7 +46,7 @@ INTER_TYPE s64_mla_s32_s32(INTER_TYPE sum, COEFF_TYPE x, INPT_TYPE y)
     return sum;
 }
 
-Word32 round_and_clip(float value, Word32 min_val, Word32 max_val) {
+Word32 round_and_clip(float value, Word64 min_val, Word64 max_val) {
     // Step 1: Round the float to the nearest integer
     Word64 rounded = (Word64)roundf(value);
     Word32 final_val;
@@ -62,7 +62,7 @@ Word32 round_and_clip(float value, Word32 min_val, Word32 max_val) {
     return final_val;
 }
 
-Word16 round_and_clip_16bit(float value, Word16 min_val, Word16 max_val) {
+Word16 round_and_clip_16bit(float value, Word64 min_val, Word64 max_val) {
     // Step 1: Round the float to the nearest integer
     Word64 rounded = (Word64)roundf(value);
     Word16 final_val;
@@ -80,12 +80,12 @@ Word16 round_and_clip_16bit(float value, Word16 min_val, Word16 max_val) {
 
 Word32 float_to_fixed_conv(float x, Word32 qfactor)
 {
-    return round_and_clip(((float)(x*(pow(2,qfactor)))), (-((Word32)(2147483647)) - ((Word32)(1))), ((Word32)2147483647));
+    return round_and_clip(((float)(x*(pow(2,qfactor)))), (-((Word64)(2147483647)) - ((Word64)(1))), ((Word64)2147483647));
 }
 
 Word16 float_to_fixed_conv_16bit(float x, Word16 qfactor)
 {
-    return round_and_clip_16bit(((float)(x*(pow(2,qfactor)))), (-((Word32)(32767)) - ((Word32)(1))), ((Word16)32767));
+    return round_and_clip_16bit(((float)(x*(pow(2,qfactor)))), (-((Word64)(32767)) - ((Word64)(1))), ((Word64)32767));
 }
 
 float fixed_to_float_conv(Word32 x, Word32 qfactor)
