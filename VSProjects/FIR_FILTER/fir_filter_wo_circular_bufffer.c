@@ -74,12 +74,12 @@ Word16 round_and_clip_16bit(float value, Word16 min_val, Word16 max_val) {
 
 Word32 float_to_fixed_conv(float x, Word32 qfactor)
 {
-    return round_and_clip(((Word32)(x*(pow(2,qfactor)))), (-((Word32)(2147483647)) - ((Word32)(1))), ((Word32)2147483647));
+    return round_and_clip(((float)(x*(pow(2,qfactor)))), (-((Word32)(2147483647)) - ((Word32)(1))), ((Word32)2147483647));
 }
 
 Word16 float_to_fixed_conv_16bit(float x, Word16 qfactor)
 {
-    return round_and_clip_16bit(((Word16)(x*(pow(2,qfactor)))), (-((Word32)(32767)) - ((Word32)(1))), ((Word16)32767));
+    return round_and_clip_16bit(((float)(x*(pow(2,qfactor)))), (-((Word32)(32767)) - ((Word32)(1))), ((Word16)32767));
 }
 
 float fixed_to_float_conv(Word32 x, Word32 qfactor)
