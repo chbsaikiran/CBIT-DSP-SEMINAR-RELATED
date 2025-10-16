@@ -53,9 +53,9 @@ Word32 round_and_clip(float value, Word64 min_val, Word64 max_val) {
 
     // Step 2: Clip to the given range
     if (rounded > max_val)
-        final_val = max_val;
+        final_val = (Word32)max_val;
     else if (rounded < min_val)
-        final_val = min_val;
+        final_val = (Word32)min_val;
     else
         final_val = (Word32)rounded;
 
@@ -69,9 +69,9 @@ Word16 round_and_clip_16bit(float value, Word64 min_val, Word64 max_val) {
 
     // Step 2: Clip to the given range
     if (rounded > max_val)
-        final_val = max_val;
+        final_val = (Word16)max_val;
     else if (rounded < min_val)
-        final_val = min_val;
+        final_val = (Word16)min_val;
     else
         final_val = (Word16)rounded;
 
