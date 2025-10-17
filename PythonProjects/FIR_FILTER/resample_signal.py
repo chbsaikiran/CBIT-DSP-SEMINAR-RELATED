@@ -175,7 +175,7 @@ if __name__ == "__main__":
     # Downsample
     filtered_signal = filtered_signal[::down]
     filtered_signal_float32 = filtered_signal.astype(np.float32)
-    with open('filtered_signal.bin', 'wb') as f:
+    with open('filtered_signal_resampled.bin', 'wb') as f:
         filtered_signal_float32.tofile(f)
     
     # Plot original and filtered signals
