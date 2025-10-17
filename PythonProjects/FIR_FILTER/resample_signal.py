@@ -139,7 +139,7 @@ if __name__ == "__main__":
     duration = len(test_signal) / fs
     # Convert to float32 and save to binary file
     test_signal_float32 = test_signal.astype(np.float32)
-    with open('test_signal.bin', 'wb') as f:
+    with open('test_signal_resampled.bin', 'wb') as f:
         test_signal_float32.tofile(f)
     print(f"Test signal data type: max {np.max(test_signal)}, min {np.min(test_signal)},first 10 samples {test_signal[:10]}")
     print(f"\nTest signal info:")
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     print(f"filter coefficients data type: max {np.max(filter_coeffs)}, min {np.min(filter_coeffs)},sum {np.sum(np.abs(filter_coeffs))}")
 
     filter_coeffs_float32 = filter_coeffs.astype(np.float32)
-    with open('filter_coeffs.bin', 'wb') as f:
+    with open('filter_coeffs_resampled.bin', 'wb') as f:
         filter_coeffs_float32.tofile(f)
     
     # Calculate frame size for 30ms frames
