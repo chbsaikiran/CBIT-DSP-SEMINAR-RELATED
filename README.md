@@ -128,3 +128,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Youtube Video Link for Session 1
 
 https://www.youtube.com/watch?v=I6rsuqhaX_U
+
+## Youtube Video Link for Session 2
+
+https://youtu.be/jFN6WyItc-I

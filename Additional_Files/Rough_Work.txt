@@ -18,3 +18,36 @@ Q1.1.14  Q1.0.15
 Q2.13                Q3.12             = Q8.22
 
 32 bit 64 bit so we have 32 gaurd bits 32 bits 34 to 0 33 to 17
+
+
+MUL A1,A2,A3 //A3 = A1 * A2
+NOP
+SHR A3,3,A3
+
+LDW *A4++, A6
+NOP 4
+ADD A6,A5,A7
+
+0x8000 0004 & 0xffff fff0 = start = 0x8000 0000 + 16bytes = end = 0x8000 000f
+
+~(block_size-1) = ~(0x0000 000F)
+
+instr1
+||instr2
+||instr3
+
+instr4
+||instr5
+||instr6
+
+instr7
+||instr8
+
+11+11+11 = 33 cycles
+if pipelining used = 13 cycles
+
+c = c1 c0
+x = x1 x0
+
+mpy c,x,prod1
+mpyh c,x,prod2
