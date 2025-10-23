@@ -101,14 +101,6 @@ python .\calculate_rmse.py .\filtered_signal.bin ..\..\VSProjects\FIR_FILTER\out
 - Python: numpy, scipy, matplotlib (see `PythonProjects/FIR_FILTER/requirements.txt`)
 - Optional: `soundfile` for `resample_signal.py` if you want to use WAV I/O
 
-## Contributing / Improvements
-
-- I can tidy up a few small issues if you'd like:
-   - Make the C sources use the same Python output filenames (or vice versa).
-   - Fix the Python frame-overlap logic for robust streaming behavior.
-   - Add a short runner script to automate the whole pipeline (design -> C run -> compare).
-
-If you want any of the above, tell me which and I will implement it.
 
 ## License
 
