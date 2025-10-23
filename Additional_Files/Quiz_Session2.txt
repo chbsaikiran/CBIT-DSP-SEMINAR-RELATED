@@ -1,0 +1,44 @@
+1. What is the main design goal of a DSP compared to a general-purpose CPU?
+
+2. Explain why deterministic timing is important in DSPs.
+
+3. Which architectural feature allows the C6748 to execute multiple operations per cycle?
+
+4. Name two real-time applications where DSPs outperform CPUs.
+
+5. What are the main strengths of CPUs compared to DSPs?
+
+6. In a load/store architecture, where are arithmetic operations performed?
+a) On memory directly
+b) On registers only
+c) On caches
+d) On ALUs only
+
+7. Explain why separating load/store and arithmetic units improves pipeline efficiency.
+
+8. What is one key reason load/store architectures are compiler-friendly?
+
+9. How does the C6748’s load/store design enable parallelism?
+
+10. How many functional units does the C6748 have, and what are they?
+
+11. What do the functional units `.L`, `.S`, `.M`, and `.D` represent?
+
+12. What is a **delay slot**, and why is it used?
+
+13. How many delay slots typically follow a branch and a load instruction in C6748?
+
+14. What strategy should a programmer follow to utilize delay slots efficiently?
+
+15. What is the purpose of circular addressing in DSPs?
+
+16. Which registers support circular addressing in the C6748?
+
+17. What is the role of the Addressing Mode Register (AMR) in circular addressing?
+
+18. How does the DSP determine the start and end of a circular buffer?
+
+19. If BK0 = 3, what is the size of the circular buffer in bytes?
+
+20. List and briefly describe the three types of pipeline hazards in C6748, and explain how each is mitigated.
+
