@@ -4,115 +4,115 @@ This project provides a comprehensive implementation of FIR (Finite Impulse Resp
 
 ## Project Structure
 
-### Python Implementation (`PythonProjects/FIR_FILTER/`)
+# FIR Filter Implementation and How to Run
 
-1. **`fir_filter_design.py`**
-   - Core FIR filter implementation using the Remez exchange algorithm
-   - Features:
-     - Filter coefficient design with customizable parameters
-     - Frame-based processing for real-time applications
-     - Visualization of frequency and impulse responses
-     - PCM audio file handling
+This repository contains educational code for designing and testing FIR (Finite Impulse Response) filters. The implementation demonstrates:
 
-2. **`calculate_rmse.py`**
-   - Tool for comparing filter implementations
-   - Calculates Root Mean Square Error (RMSE) between two signals
-   - Provides visual analysis of signal differences
-   - Useful for validating C vs Python implementations
+- Filter design and visualization in Python (using scipy)
+- Frame-based filtering in Python
+- C implementations (float and fixed-point) to compare performance and numerical effects
+- Utilities to resample audio and compute RMSE between outputs
 
-3. **`downsample.py`**
-   - Basic downsampling implementation
-   - Reduces sample rate by skipping samples
-   - Supports various input file formats
+The code is organized so you can generate coefficients and test signals in Python, process those signals in the C projects, and then compare results back in Python.
 
-4. **`generate_pesq.py`**
-   - PESQ (Perceptual Evaluation of Speech Quality) calculation
-   - Supports both narrow-band (8kHz) and wide-band (16kHz)
-   - Converts between different audio formats
-   - Objective quality assessment of processed audio
+## Key locations
 
-5. **`resample_signal.py`**
-   - Advanced signal resampling implementation
-   - Proper interpolation methods for sample rate conversion
+- `PythonProjects/FIR_FILTER/` — main Python tools:
+   - `fir_filter_design.py` — design FIR filters (Remez), generate test signal, frame-based processing, saves `filter_coeffs.bin` and `test_signal.bin`.
+   - `calculate_rmse.py` — read two float32 binary files and compute RMSE (dB) and plot signals + error.
+   - `resample_signal.py` — resample audio using windowed-sinc FIR (uses `soundfile` to read WAVs).
+   - `requirements.txt` — Python dependencies (numpy, scipy, matplotlib).
 
-### C Implementation (`VSProjects/FIR_FILTER/`)
+- `VSProjects/FIR_FILTER/` — C implementations and Visual Studio project files:
+   - `fir_filter_with_circular_buffer.c` — float and fixed-point implementations using a circular approach (reads/writes binary files).
+   - `fir_filter_wo_circular_bufffer.c` — frame-based FIR without circular buffer; uses fixed-point helpers; reads `filter_coeffs.bin` and `test_signal.bin` saved by Python.
 
-1. **`fir_filter_wo_circular_buffer.c`**
-   - Direct FIR filter implementation in C
-   - Demonstrates low-level signal processing
-   - Useful for performance comparisons
+## Quick setup (Windows PowerShell)
 
-## Installation
+1. Install Python dependencies (prefer a virtual environment):
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   ```
-
-2. Install Python dependencies:
-   ```bash
-   cd PythonProjects/FIR_FILTER
-   pip install -r requirements.txt
-   ```
-
-3. For the C implementation:
-   - Use Visual Studio to build the project in `VSProjects/FIR_FILTER/`
-   - Or compile directly using your preferred C compiler
-
-## Usage
-
-### Python FIR Filter
-
-```python
-# Example usage of FIR filter design
-from fir_filter_design import design_fir_filter
-
-# Design a lowpass filter
-filter_coeffs = design_fir_filter(
-    fs=16000,        # Sampling frequency (Hz)
-    fpass=4000,      # Passband frequency (Hz)
-    fstop=5000,      # Stopband frequency (Hz)
-    pass_ripple=1,   # Passband ripple (dB)
-    stop_atten=40,   # Stopband attenuation (dB)
-    plot=True        # Show filter response
-)
+```powershell
+cd .\PythonProjects\FIR_FILTER
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-### Comparing Implementations
+2. Generate filter coefficients and a test signal (run Python generator):
 
-```bash
-# Compare Python and C implementations
-python calculate_rmse.py python_output.bin c_output.bin --verbose
+```powershell
+# from the PythonProjects/FIR_FILTER folder
+python .\fir_filter_design.py
 ```
 
-### Quality Assessment
+This will produce at least the following files in that folder:
+- `filter_coeffs.bin` (float32 binary, filter coefficients)
+- `test_signal.bin` (float32 binary, test signal)
+- `filtered_signal.bin` (Python filtered output)
 
-```bash
-# Calculate PESQ score
-python generate_pesq.py original.pcm 16000 processed.pcm 16000
+3. Build and run the C implementation (Visual Studio):
+
+- Open `VSProjects\FIR_FILTER\fir_filter_project.sln` in Visual Studio and build+run. The C project expects the Python-generated files in relative paths used by the C source (see notes below).
+
+- Or compile from a command line using cl.exe (MSVC) or a cross-compiler, for example (PowerShell):
+
+```powershell
+# Example: compile the non-circular-buffer demo with MSVC (run from Developer Command Prompt for VS)
+# cl /O2 /W3 /EHsc ..\..\PythonProjects\FIR_FILTER\fir_filter_wo_circular_bufffer.c
 ```
 
-### Resampling
+When the C executable runs it will read `filter_coeffs.bin` and `test_signal.bin` (paths are relative inside the C sources) and will write a binary output such as `out_msvc_wo_circ_buffer.bin`.
 
-```bash
-# Downsample a signal
-python downsample.py input.pcm output.pcm 2  # Skip every other sample
+4. Compare results with Python RMSE tool:
+
+```powershell
+# From PythonProjects/FIR_FILTER folder, compare Python output to C output
+python .\calculate_rmse.py .\filtered_signal.bin ..\..\VSProjects\FIR_FILTER\out_msvc_wo_circ_buffer.bin --verbose
 ```
 
-## Features
+Note: `calculate_rmse.py` expects float32 binary files. Adjust paths as needed.
 
-- FIR filter design using Remez exchange algorithm
-- Frame-based processing for real-time applications
-- Multiple implementation comparisons (Python vs C)
-- Signal quality assessment tools
-- Comprehensive visualization capabilities
-- Support for various audio formats
-- Performance analysis tools
+## Important notes and troubleshooting
+
+- Filenames in the C sources: some C files reference slightly different names (e.g. `fir_ceoffs_pygen.bin` or `input_pygen.bin`). If you run into "file not found" in C, either rename the Python output files to match the C expectation or edit the `fopen` lines in the C source to match the Python filenames (`filter_coeffs.bin`, `test_signal.bin`).
+
+- Endianness / float format: Python writes IEEE-754 float32 using the host endianness. The C code assumes `sizeof(float)==4` and the same endianness — this is okay on typical Windows x86/x64 machines but be careful if moving files between different architectures.
+
+- Fixed-point scaling: the C fixed-point code uses Q-format conversions and guard bits. If you compare Python (floating) output with C fixed-point output, small differences are expected due to quantization and rounding. Use `calculate_rmse.py` to quantify the difference.
+
+- RMSE edge case: if two signals are identical, RMSE (in dB) becomes -inf with current code. You can modify `calculate_rmse.py` to special-case zero RMSE if desired.
+
+## Running a full example (recommended)
+
+1. From PowerShell (in `PythonProjects/FIR_FILTER`):
+
+```powershell
+# 1) design filter + generate test signal
+python .\fir_filter_design.py
+
+# 2) build/run C project (either from Visual Studio or command line) so it reads the .bin files and writes C output
+
+# 3) compare
+python .\calculate_rmse.py .\filtered_signal.bin ..\..\VSProjects\FIR_FILTER\out_msvc_wo_circ_buffer.bin --verbose
+```
 
 ## Dependencies
 
-- numpy==1.24.3
-- scipy==1.10.1
+- Python: numpy, scipy, matplotlib (see `PythonProjects/FIR_FILTER/requirements.txt`)
+- Optional: `soundfile` for `resample_signal.py` if you want to use WAV I/O
+
+## Contributing / Improvements
+
+- I can tidy up a few small issues if you'd like:
+   - Make the C sources use the same Python output filenames (or vice versa).
+   - Fix the Python frame-overlap logic for robust streaming behavior.
+   - Add a short runner script to automate the whole pipeline (design -> C run -> compare).
+
+If you want any of the above, tell me which and I will implement it.
+
+## License
+
+This repository uses the MIT license (see the LICENSE file if present).
 - matplotlib==3.7.1
 - soundfile==0.12.1
 - pesq==0.0.4
