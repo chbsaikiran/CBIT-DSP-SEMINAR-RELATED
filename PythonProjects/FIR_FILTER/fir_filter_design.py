@@ -69,7 +69,7 @@ def design_fir_filter(fs, fpass, fstop, pass_ripple_db, stop_atten_db, plot=True
     weights = [1/pass_ripple, 1/stop_ripple]
     
     # Design filter using Remez algorithm
-    b = signal.remez(N, bands, desired, weights)
+    b = signal.remez(N, bands, desired, weight=weights)
     #pdb.set_trace()
     if plot:
         plot_filter_response(b, fs)
